@@ -1,0 +1,6 @@
+Se você tem o make instalado no seu computador use o Compilar_make
+Se você tem o mingw32-make instalado no seu computador use o Compilar_mingw
+
+ao compilar a saida ira para o diretorio out/<compilador utilizado>
+
+os algoritmos serão escritos no arquivo src/fecho.cpp
