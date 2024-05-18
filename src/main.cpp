@@ -37,9 +37,21 @@ int main(){
         std::cerr << "Failed to initialize GLAD\n";
         return 1;
     }
+    /*Chamar funcoes aqui*/
+    Vertex vertices[] = {
+        0.0f, 0.0f,
+        0.5f, 0.0f, 
+        0.0f, 0.5f
+    };
+
+    Mesh m = Mesh(vertices, 3);
+
+    Shader* s = new Shader("../../Shaders/baseShader.vert", "../../Shaders/baseShader.frag");
+
+
+    /*Fim chamar funcoes*/
     glClearColor(0,0,0,0);
     glViewport(0, 0, WIDTH, HEIGHT);
-
     //Loop da Janela
     int frames = 0;
     double lastTime = glfwGetTime();
@@ -61,7 +73,7 @@ int main(){
             glfwPollEvents();
             
             //Renderizar pontos abaixo
-
+            m.render(s);
             //swap
             glfwSwapBuffers(window);
         }

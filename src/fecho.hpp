@@ -4,6 +4,8 @@
 
 //editar esse arquivo e chamar as funcoes no main
 #include<iostream>
+#include "shader.hpp"
+#include "mesh.hpp"
 
 
 using std::cout;
