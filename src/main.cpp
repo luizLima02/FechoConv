@@ -6,6 +6,46 @@
 
 #define WIDTH 800
 #define HEIGHT 800
+#define MENORP 2
+#define MAIORP 15
+
+static bool Pontos = false;
+static bool OriginalShow = true;
+static int PontoSize = 5;
+
+void processInput(GLFWwindow* window){
+    //fecha a janela
+    if(glfwGetKey(window, GLFW_KEY_ESCAPE)){
+        glfwSetWindowShouldClose(window, 1);
+    }
+    //mostra o fecho convexo como pontos
+    if(glfwGetKey(window, GLFW_KEY_P)){
+        Pontos = true;
+    }
+    //mostra o fecho convexo como linhas
+    if(glfwGetKey(window, GLFW_KEY_L)){
+        Pontos = false;
+    }
+    //mostra a figura original
+    if(glfwGetKey(window, GLFW_KEY_O)){
+        OriginalShow = true;
+    }
+    //esconde a figura original
+    if(glfwGetKey(window, GLFW_KEY_H)){
+        OriginalShow = false;
+    }
+    //diminui o tamanho dos pontos
+    if(glfwGetKey(window, GLFW_KEY_D)){
+        if(PontoSize > MENORP){
+            PontoSize--;
+        }
+    //aumenta o tamanho dos pontos
+    }else if(glfwGetKey(window, GLFW_KEY_A)){
+        if(PontoSize < MAIORP){
+            PontoSize++;
+        }
+    }
+}
 
 int main(){
 
@@ -37,7 +77,9 @@ int main(){
         std::cerr << "Failed to initialize GLAD\n";
         return 1;
     }
+
     /*Chamar funcoes aqui*/
+
     Vertex vertices[] = {
         0.4	,   0.15	,
         0.47,   0.0	    ,
@@ -78,9 +120,18 @@ int main(){
         0.25	 ,0.14
     };
 
-    Mesh m = Mesh(vertices, 37);
+    auto fecho = QuickHull(vertices, 37);
+
+    auto ord = ordenaHorario(fecho.data(), fecho.size());
+
+
+    Mesh original = Mesh(vertices, 37);
+
+    Mesh m = Mesh(ord.data(), ord.size());
 
     Shader* s = new Shader("../../Shaders/baseShader.vert", "../../Shaders/baseShader.frag");
+
+
 
 
     /*Fim chamar funcoes*/
@@ -104,10 +155,18 @@ int main(){
                 frames = 0;
                 lastTime += 1.0;
             }
+            processInput(window);
             glfwPollEvents();
-            
+            glClear(GL_COLOR_BUFFER_BIT);
             //Renderizar pontos abaixo
-            m.render(s);
+            if(OriginalShow){
+                original.render(s, 1);
+            }
+            if(Pontos == true){
+                m.render(s, 0, PontoSize);
+            }else{
+                m.render(s, 0);
+            }
             //swap
             glfwSwapBuffers(window);
         }

@@ -5,22 +5,12 @@
 //editar esse arquivo e chamar as funcoes no main
 #include<iostream>
 #include<new>
-#include <algorithm>
-#include <utility>
-#include <cmath>
 #include<vector>
 #include "shader.hpp"
 #include "mesh.hpp"
 
 
 using std::cout; using std::nothrow; using std::vector;
-
-
-static int Contador = 0;
-
-double distPontos(Vertex proj, Vertex k){
-    return ((proj.px-k.px)*(proj.px-k.px)) + ((proj.py-k.py)*(proj.py-k.py));
-}
 
 
 int getXmax(Vertex* vertices, int n){
@@ -53,11 +43,11 @@ int getXmin(Vertex* vertices, int n){
 int sidePoint(Vertex pi, Vertex pf, Vertex ver){
     double val = (pf.py - pi.py) * (ver.px - pf.px) - (pf.px - pi.px) * (ver.py - pf.py);
     
-    if(val > 0)
+    if(val < 0)
     {
         return -1;
     }
-    if(val < 0){
+    if(val > 0){
         return 1;
     }
 
@@ -65,19 +55,7 @@ int sidePoint(Vertex pi, Vertex pf, Vertex ver){
 }
 
 double lineDist(Vertex p1, Vertex p2, Vertex p) {
-    //leva para a origem;
-    Vertex j = {(p2.px-p1.px), (p2.py-p1.py)};
-    Vertex k = {(p.px-p1.px), (p.py-p1.py)};
-
-    double a = (j.px * k.px) + (j.py * k.py);
-    double b = (j.px * j.px) + (j.py * j.py);
-    if(b == 0){ b = 1;}
-    double val = a/b;
-
-    Vertex proj = {(j.px*val), (j.py*val)};
-
-    return distPontos(proj, k);
-    //return abs ((p.py - p1.py) * (p2.px - p1.px) - (p2.py - p1.py) * (p.px - p1.px));
+    return abs ((p.py - p1.py) * (p2.px - p1.px) - (p2.py - p1.py) * (p.px - p1.px));
 }
 
 
@@ -92,15 +70,13 @@ bool hasValue(vector<Vertex> vec, Vertex val){
 
 void QuickHullAux(Vertex* vertices, int n, Vertex p1, Vertex p2, int side, vector<Vertex>& fecho)
 {
-    Contador++;
     int ind = -1;
-    double dist_max = 0;
-    cout << Contador << "\n";
+    int dist_max = 0;
+
     //calcula a distancia da linha p1 - p2 para o ponto[i]
     for (int i = 0; i < n; i++)
     {
         double distancia = lineDist(p1, p2, vertices[i]);
-        //cout << "distancia: " << distancia << "\n";
         //se o ponto estiver na direcao que esta sendo verificada e estiver mais longe doque a distancia
         //maxima o indice sera esse ponto e a distancia maxima sera ela
         if(sidePoint(p1, p2, vertices[i]) == side && distancia > dist_max){
@@ -108,12 +84,7 @@ void QuickHullAux(Vertex* vertices, int n, Vertex p1, Vertex p2, int side, vecto
             ind = i;
         }
     }
-
-    if(hasValue(fecho, vertices[ind])){
-        return;
-    }
-
-    //cout << "Max dist: " << dist_max << "\n";
+    
     //se não tiver ponto mais ao lado que estou verificando adicione os dois pontos para o fecho
     //e retorne
     if(ind == -1){
@@ -127,13 +98,9 @@ void QuickHullAux(Vertex* vertices, int n, Vertex p1, Vertex p2, int side, vecto
     }
     //passa o ponto encontrado e o primeiro ponto, o lado passado será o inverso da posicao
     //do ponto 2 em relacao aos pontos passados
+    //QuickHullAux(vertices, n, vertices[ind], p1, -sidePoint(vertices[ind], p1, p2), fecho);
 
-
-    QuickHullAux(vertices, n, vertices[ind], p1, -sidePoint(vertices[ind], p1, p2), fecho);
-
-    QuickHullAux(vertices, n, vertices[ind], p2, -sidePoint(vertices[ind], p2, p1), fecho);
-
-    
+    //QuickHullAux(vertices, n, vertices[ind], p2, -sidePoint(vertices[ind], p2, p1), fecho);
 }
 
 vector<Vertex> QuickHull(Vertex* vertices, int n){
@@ -153,15 +120,15 @@ vector<Vertex> QuickHull(Vertex* vertices, int n){
 
     
     //pega o x minimo e maximo
-    //cout << "Xmax: " << vertices[pontoMax].px << " - " << vertices[pontoMax].py << "\n";
-    //cout << "Xmin: " << vertices[pontoMin].px << " - " << vertices[pontoMin].py << "\n";
+    cout << "Xmax: " << vertices[pontoMax].px << " - " << vertices[pontoMax].py << "\n";
+    cout << "Xmin: " << vertices[pontoMin].px << " - " << vertices[pontoMin].py << "\n";
     fecho.push_back(vertices[pontoMin]);
     fecho.push_back(vertices[pontoMax]);
     //divide o conjunto em 2
-    //lado esquerdo
-    QuickHullAux(vertices, n, vertices[pontoMin], vertices[pontoMax], -1, fecho);
     //lado direito
     QuickHullAux(vertices, n, vertices[pontoMin], vertices[pontoMax], 1, fecho);
+    //lado esquerdo
+    //QuickHullAux(vertices, n, vertices[pontoMin], vertices[pontoMax], -1, fecho);
 
 
     return fecho;
@@ -170,35 +137,6 @@ vector<Vertex> QuickHull(Vertex* vertices, int n){
 void Graham(){
     cout << "Graham\n";
 }
-
-
-
-//ordena pontos
-vector<Vertex> ordenaHorario(Vertex* pontos, int n){
-    vector<Vertex> ordenados;
-    Vertex inicio = pontos[0];
-    ordenados.push_back(inicio);
-    while (ordenados.size() < n)
-    {
-        double distMin = INFINITY;
-        int ind = -1;
-        for(int i = 0; i < n; i++){
-            if(inicio != pontos[i] && hasValue(ordenados, pontos[i]) == false){
-                double dist = distPontos(inicio, pontos[i]);
-                if(dist < distMin){
-                    distMin = dist;
-                    ind = i;
-                }
-            }//end if
-        }//end for
-        ordenados.push_back(pontos[ind]);
-        inicio = pontos[ind];
-    }
-    
-    return ordenados;
-}
-
-
 
 
 #endif

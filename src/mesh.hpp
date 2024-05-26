@@ -8,6 +8,17 @@
 
 struct Vertex{
     float px; float py; //posicoes
+
+
+    bool operator==(const Vertex& other) const
+    {
+        return px == other.px && py == other.py;
+    }
+
+    bool operator!=(const Vertex& other) const
+    {
+        return px != other.px || py != other.py;
+    }
 };
 
 /*Os Vertices tem que ser definidos em ordem anti-horaria*/
@@ -77,11 +88,22 @@ class Mesh{
             glDeleteBuffers(1, &this->VBO);
         } 
 
-        void render(Shader *s){
+        void render(Shader *s, int r){
             s->use();
+            s->setInt("original", r);
             glBindVertexArray(this->VAO);
             //desenha
             glDrawArrays(GL_LINE_LOOP , 0, this->qntVertices);
+            glBindVertexArray(0);
+        }
+
+        void render(Shader *s, int r, int p){
+            s->use();
+            s->setInt("original", r);
+            glBindVertexArray(this->VAO);
+            //desenha
+            glPointSize(p);
+            glDrawArrays(GL_POINTS , 0, this->qntVertices);
             glBindVertexArray(0);
         }
         
