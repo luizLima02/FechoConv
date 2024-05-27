@@ -19,6 +19,11 @@ struct Vertex{
     {
         return px != other.px || py != other.py;
     }
+
+    bool operator<=(const Vertex& other) const
+    {
+        return px <= other.px;
+    }
 };
 
 /*Os Vertices tem que ser definidos em ordem anti-horaria*/

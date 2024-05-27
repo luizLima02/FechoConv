@@ -120,14 +120,12 @@ int main(){
         0.25	 ,0.14
     };
 
+    //auto fecho = Graham(vertices, 37);
     auto fecho = QuickHull(vertices, 37);
-
-    auto ord = ordenaHorario(fecho.data(), fecho.size());
-
 
     Mesh original = Mesh(vertices, 37);
 
-    Mesh m = Mesh(ord.data(), ord.size());
+    Mesh m = Mesh(fecho.data(), fecho.size());
 
     Shader* s = new Shader("../../Shaders/baseShader.vert", "../../Shaders/baseShader.frag");
 

@@ -11,6 +11,7 @@
 #include<vector>
 #include "shader.hpp"
 #include "mesh.hpp"
+#include "merge.hpp"
 
 
 using std::cout; using std::nothrow; using std::vector;
@@ -21,7 +22,6 @@ static int Contador = 0;
 double distPontos(Vertex proj, Vertex k){
     return ((proj.px-k.px)*(proj.px-k.px)) + ((proj.py-k.py)*(proj.py-k.py));
 }
-
 
 int getXmax(Vertex* vertices, int n){
     int xmaximo = 0;
@@ -74,7 +74,7 @@ double lineDist(Vertex p1, Vertex p2, Vertex p) {
     if(b == 0){ b = 1;}
     double val = a/b;
 
-    Vertex proj = {(j.px*val), (j.py*val)};
+    Vertex proj = {(float)(j.px*val), (float)(j.py*val)};
 
     return distPontos(proj, k);
     //return abs ((p.py - p1.py) * (p2.px - p1.px) - (p2.py - p1.py) * (p.px - p1.px));
@@ -135,6 +135,30 @@ void QuickHullAux(Vertex* vertices, int n, Vertex p1, Vertex p2, int side, vecto
 
     
 }
+//ordena pontos
+vector<Vertex> ordenaHorario(Vertex* pontos, int n){
+    vector<Vertex> ordenados;
+    Vertex inicio = pontos[0];
+    ordenados.push_back(inicio);
+    while (ordenados.size() < n)
+    {
+        double distMin = INFINITY;
+        int ind = -1;
+        for(int i = 0; i < n; i++){
+            if(inicio != pontos[i] && hasValue(ordenados, pontos[i]) == false){
+                double dist = distPontos(inicio, pontos[i]);
+                if(dist < distMin){
+                    distMin = dist;
+                    ind = i;
+                }
+            }//end if
+        }//end for
+        ordenados.push_back(pontos[ind]);
+        inicio = pontos[ind];
+    }
+    
+    return ordenados;
+}
 
 vector<Vertex> QuickHull(Vertex* vertices, int n){
     //Vertex* fecho = new(nothrow)Vertex[n];
@@ -163,42 +187,63 @@ vector<Vertex> QuickHull(Vertex* vertices, int n){
     //lado direito
     QuickHullAux(vertices, n, vertices[pontoMin], vertices[pontoMax], 1, fecho);
 
+    auto ord = ordenaHorario(fecho.data(), fecho.size());
+    return ord;
+}
+
+// Encontrar ponto de referência (menor y)
+Vertex findReferencePoint(vector<Vertex> vertices) {
+    Vertex ref = vertices[0];
+    for (auto &v : vertices) {
+        if (v.py < ref.py || (v.py == ref.py && v.px < ref.px)) {
+            ref = v;
+        }
+    }
+    return ref;
+}
+
+// Compara ângulo polar em relação ao ponto de referência
+bool comparePolarAngle(Vertex a, Vertex b, Vertex ref) {
+    int side = sidePoint(a, b, ref);
+    if (side == 0) {
+        // Se os vértices forem colineares, ordene pela distância até o ponto de referência
+        return distPontos(a, ref) < distPontos(b, ref);
+    }
+    return side > 0;
+}
+
+void sortByPolarAngle(vector<Vertex>& vertices, const std::function<bool(const Vertex&, const Vertex&)>& compare) {
+    mergeSort(vertices, compare);
+}
+
+vector<Vertex> Graham(Vertex* vertices, int n) {
+    cout << "Graham\n";
+
+    // Converter array para vector
+    vector<Vertex> vertexVector(vertices, vertices + n);
+
+    // Ponto de referência (menor y, ou menor x em caso de empate)
+    Vertex ref = findReferencePoint(vertexVector);
+
+    // Ordenar vértices pelo ângulo polar de acordo com o ponto de referência
+    sortByPolarAngle(vertexVector, [&](const Vertex& a, const Vertex& b) {
+        return comparePolarAngle(a, b, ref);
+    });
+
+    // Construir Fecho
+    vector<Vertex> fecho;
+    fecho.push_back(vertexVector[0]);
+    fecho.push_back(vertexVector[1]);
+
+    for (int i = 2; i < n; i++) {
+        // Remover vértices côncavos
+        while (fecho.size() >= 2 && sidePoint(fecho[fecho.size() - 1], vertexVector[i], fecho[fecho.size() - 2]) <= 0) {
+            fecho.pop_back();
+        }
+        fecho.push_back(vertexVector[i]);
+    }
 
     return fecho;
 }
-
-void Graham(){
-    cout << "Graham\n";
-}
-
-
-
-//ordena pontos
-vector<Vertex> ordenaHorario(Vertex* pontos, int n){
-    vector<Vertex> ordenados;
-    Vertex inicio = pontos[0];
-    ordenados.push_back(inicio);
-    while (ordenados.size() < n)
-    {
-        double distMin = INFINITY;
-        int ind = -1;
-        for(int i = 0; i < n; i++){
-            if(inicio != pontos[i] && hasValue(ordenados, pontos[i]) == false){
-                double dist = distPontos(inicio, pontos[i]);
-                if(dist < distMin){
-                    distMin = dist;
-                    ind = i;
-                }
-            }//end if
-        }//end for
-        ordenados.push_back(pontos[ind]);
-        inicio = pontos[ind];
-    }
-    
-    return ordenados;
-}
-
-
-
 
 #endif
