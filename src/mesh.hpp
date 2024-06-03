@@ -4,6 +4,7 @@
 #include<new>
 #include<stdlib.h>
 //render
+#include<string>
 #include"shader.hpp"
 
 struct Vertex{
@@ -67,6 +68,23 @@ class Mesh{
             this->initBuffers();
         }
 
+        Vertex* getVertex(){
+            return this->vertices;
+        }
+
+        unsigned getSize(){
+            return this->qntVertices;
+        }
+
+        std::string getVertices(){
+            std::string s;
+            for (int i = 0; i < this->qntVertices; i++)
+            {
+                s = s + "v " + std::to_string(this->vertices[i].px) + " " + std::to_string(this->vertices[i].py) + " 0\n";
+            }
+            return s;
+        }
+
 /*
         Mesh(const Mesh& obj){
             this->qntVertices = obj.qntVertices;
@@ -93,22 +111,12 @@ class Mesh{
             glDeleteBuffers(1, &this->VBO);
         } 
 
-        void render(Shader *s, int r){
+        void render(Shader *s, GLenum modo, int r){
             s->use();
             s->setInt("original", r);
             glBindVertexArray(this->VAO);
             //desenha
-            glDrawArrays(GL_LINE_LOOP , 0, this->qntVertices);
-            glBindVertexArray(0);
-        }
-
-        void render(Shader *s, int r, int p){
-            s->use();
-            s->setInt("original", r);
-            glBindVertexArray(this->VAO);
-            //desenha
-            glPointSize(p);
-            glDrawArrays(GL_POINTS , 0, this->qntVertices);
+            glDrawArrays(modo , 0, this->qntVertices);
             glBindVertexArray(0);
         }
         

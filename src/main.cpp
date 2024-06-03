@@ -1,4 +1,5 @@
 #include"fecho.hpp"
+#include"objeto.hpp"
 #include<stdlib.h>
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
@@ -78,9 +79,11 @@ int main(){
         return 1;
     }
 
+    Model mod("../../OBJ/container.obj");
+
     /*Chamar funcoes aqui*/
 
-    Vertex vertices[] = {
+    /*Vertex vertices[] = {
         0.4	,   0.15	,
         0.47,   0.0	    ,
         0.4	,   -0.2	,
@@ -118,17 +121,26 @@ int main(){
         0.26	 ,0.46	,
         0.26	 ,0.26	,
         0.25	 ,0.14
-    };
+    };*/
 
     //auto fecho = Graham(vertices, 37);
-    auto fecho = QuickHull(vertices, 37);
+    //auto fecho = QuickHull(vertices, 37);
 
-    Mesh original = Mesh(vertices, 37);
+    //Mesh original = Mesh(vertices, 37);
 
-    Mesh m = Mesh(fecho.data(), fecho.size());
+    //Mesh m = Mesh(fecho.data(), fecho.size());
+
+    //mod.writeOBJ("../../OBJ/cavaloM.obj");
+    vector<Mesh*> meshFecho;
+    for(auto &i: mod.meshes){
+        auto fmesh = QuickHull(i->getVertex(), i->getSize());
+        meshFecho.push_back(new Mesh(fmesh.data(), fmesh.size()));
+    }
+    Model fechoConvexo = Model(meshFecho);
+
+    //fechoConvexo.printV();
 
     Shader* s = new Shader("../../Shaders/baseShader.vert", "../../Shaders/baseShader.frag");
-
 
 
 
@@ -157,19 +169,28 @@ int main(){
             glfwPollEvents();
             glClear(GL_COLOR_BUFFER_BIT);
             //Renderizar pontos abaixo
-            if(OriginalShow){
-                original.render(s, 1);
+            //glLineWidth(5);
+            //glPointSize(15);
+            mod.render(s, GL_LINE_LOOP, 1);
+            /*glPointSize(15);
+            mod.render(s, GL_POINTS, 1);
+            glPointSize(5);*/
+            //glPointSize(5);
+            //fechoConvexo.render(s, GL_POINTS, 0);
+            //mod.render(s, GL_LINE_LOOP, 1);
+            /*if(OriginalShow){
+                original.render(s, GL_POINT);
             }
             if(Pontos == true){
                 m.render(s, 0, PontoSize);
             }else{
                 m.render(s, 0);
-            }
+            }*/
             //swap
             glfwSwapBuffers(window);
         }
     }
-
+    delete s;
     glfwTerminate();
 
     return 0;
