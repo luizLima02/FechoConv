@@ -136,6 +136,65 @@ void QuickHullAux(Vertex* vertices, int n, Vertex p1, Vertex p2, int side, vecto
     
 }
 //ordena pontos
+
+float interpLinear(float p1, float p2, float perc){
+    float xi = (1-perc)*p1 + perc*p2;
+    return xi;
+}
+
+Vertex calculateCentralPoint(std::vector<Vertex>& vertices){
+    float maxX  = vertices[0].px;//maximo x
+    float maxY  = vertices[0].py;//maximo y
+    float minX  =  vertices[0].px;//minimo x
+    float minY  =  vertices[0].py;//minimo y
+    for(int i = 0; i < vertices.size(); i++){
+        float pxA = vertices[i].px;
+        float pyA = vertices[i].py;
+        if(pyA > maxY){
+            maxY = pyA;
+        }
+        if(pyA < minY){
+            minY = pyA;
+        }
+        if(pxA > maxX){
+            maxY = pyA;
+        }
+        if(pxA < minX){
+            minY = pyA;
+        }
+    }
+    float xc = interpLinear(minX, maxX, 0.5f);
+    float yc = interpLinear(minY, maxY, 0.5f);
+    Vertex center = Vertex{xc, yc};
+    return center;
+}
+
+Vertex centralPoint;
+// Função para calcular o ângulo em relação ao ponto central
+float angleFromCenter(const Vertex& point) {
+    return atan2(point.py - centralPoint.py, point.px - centralPoint.px);
+}
+
+// Função de comparação para ordenar em ordem horária
+bool compareClockwise(const Vertex& a, const Vertex& b) {
+    // Calcular os ângulos de 'a' e 'b' em relação ao ponto central
+    float angleA = angleFromCenter(a);
+    float angleB = angleFromCenter(b);
+
+    // Corrigir os ângulos negativos
+    if (angleA < 0) angleA += 2 * M_PI;
+    if (angleB < 0) angleB += 2 * M_PI;
+
+    return angleA < angleB;
+}
+
+// Função para ordenar o vetor em ordem horária
+void sortVerticesClockwise(std::vector<Vertex>& vertices) {
+    centralPoint = calculateCentralPoint(vertices); // Definir o ponto central
+    std::sort(vertices.begin(), vertices.end(), compareClockwise);
+}
+
+
 vector<Vertex> ordenaHorario(Vertex* pontos, int n){
     vector<Vertex> ordenados;
     Vertex inicio = pontos[0];
@@ -186,9 +245,10 @@ vector<Vertex> QuickHull(Vertex* vertices, int n){
     QuickHullAux(vertices, n, vertices[pontoMin], vertices[pontoMax], -1, fecho);
     //lado direito
     QuickHullAux(vertices, n, vertices[pontoMin], vertices[pontoMax], 1, fecho);
-
-    auto ord = ordenaHorario(fecho.data(), fecho.size());
-    return ord;
+    //sortVertices(fecho);
+    //auto ord = ordenaHorario(fecho.data(), fecho.size());
+    sortVerticesClockwise(fecho);
+    return fecho;
 }
 
 // Encontrar ponto de referência (menor y)

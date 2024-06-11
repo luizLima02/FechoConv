@@ -9,6 +9,7 @@ add_executable( ${PROJECT_NAME}
                 src/shader.hpp
                 src/mesh.hpp
 		src/fecho.hpp
+		src/objeto.hpp
                 src/main.cpp
                 )
 
