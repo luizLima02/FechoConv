@@ -232,12 +232,10 @@ vector<Vertex> Graham(Vertex* vertices, int n) {
 
     // Construir Fecho
     vector<Vertex> fecho;
-    fecho.push_back(vertexVector[0]);
-    fecho.push_back(vertexVector[1]);
 
-    for (int i = 2; i < n; i++) {
+    for (int i = 0; i < n; i++) {
         // Remover vértices côncavos
-        while (fecho.size() >= 2 && sidePoint(fecho[fecho.size() - 1], vertexVector[i], fecho[fecho.size() - 2]) <= 0) {
+        while (fecho.size() > 1 && sidePoint(fecho[fecho.size() - 1], vertexVector[i], fecho[fecho.size() - 2]) <= 0) {
             fecho.pop_back();
         }
         fecho.push_back(vertexVector[i]);

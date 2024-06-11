@@ -120,8 +120,8 @@ int main(){
         0.25	 ,0.14
     };
 
-    //auto fecho = Graham(vertices, 37);
-    auto fecho = QuickHull(vertices, 37);
+    auto fecho = Graham(vertices, 37);
+    //auto fecho = QuickHull(vertices, 37);
 
     Mesh original = Mesh(vertices, 37);
 
