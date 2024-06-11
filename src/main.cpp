@@ -145,7 +145,7 @@ int main(){
 
 
     /*Fim chamar funcoes*/
-    glClearColor(0,0,0,0);
+    glClearColor(0.1,0.1,0.1,1);
     glViewport(0, 0, WIDTH, HEIGHT);
     //Loop da Janela
     int frames = 0;
@@ -169,14 +169,15 @@ int main(){
             glfwPollEvents();
             glClear(GL_COLOR_BUFFER_BIT);
             //Renderizar pontos abaixo
-            //glLineWidth(5);
+            glLineWidth(10);
             //glPointSize(15);
             mod.render(s, GL_LINE_LOOP, 1);
             /*glPointSize(15);
             mod.render(s, GL_POINTS, 1);
             glPointSize(5);*/
             //glPointSize(5);
-            //fechoConvexo.render(s, GL_POINTS, 0);
+            glLineWidth(1);
+            fechoConvexo.render(s, GL_LINE_LOOP, 0);
             //mod.render(s, GL_LINE_LOOP, 1);
             /*if(OriginalShow){
                 original.render(s, GL_POINT);
