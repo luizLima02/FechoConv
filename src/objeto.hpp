@@ -119,7 +119,9 @@ public:
     std::vector<Mesh*> meshes;
 
     //// Contrutores baseados em leitura de arquivo
-    
+    Model() {
+        
+    }
     //path to model, path to texture
     Model(string pathModel){
         std::vector<Mesh*> msh = lerObj(pathModel);

@@ -248,6 +248,7 @@ vector<Vertex> QuickHull(Vertex* vertices, int n){
     //sortVertices(fecho);
     //auto ord = ordenaHorario(fecho.data(), fecho.size());
     sortVerticesClockwise(fecho);
+    cout << "Numero de vertices do fecho = " << fecho.size() << '\n';
     return fecho;
 }
 
@@ -300,7 +301,7 @@ vector<Vertex> Graham(Vertex* vertices, int n) {
         }
         fecho.push_back(vertexVector[i]);
     }
-
+    cout << "Numero de vertices do fecho = " << fecho.size() << '\n';
     return fecho;
 }
 

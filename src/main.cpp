@@ -1,46 +1,55 @@
-#include"fecho.hpp"
-#include"objeto.hpp"
-#include<stdlib.h>
+#include "fecho.hpp"
+#include "objeto.hpp"
+#include <stdlib.h>
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
-
 
 #define WIDTH 800
 #define HEIGHT 800
 #define MENORP 2
 #define MAIORP 15
 
-static bool Pontos = false;
+void handleUserInput(int& command, int& numberOfPoints);
+void renderScene(GLFWwindow* window, int command, const std::vector<Vertex>& points, Model& convexHull, Model& theme, Shader* shader);
+void processInput(GLFWwindow* window);
+void renderPoints(Shader* shader, const std::vector<Vertex>& points);
+void renderConvexHull(Shader* shader, Model& convexHull);
+void renderTheme(Shader* shader, Model& theme);
+std::vector<Vertex> generateRandomPoints(int numberOfPoints);
+std::vector<Vertex> createHexagonVertices();
+std::vector<Vertex> computeConvexHull(Vertex* points, int size, bool isQuickHull);
+
+static bool ShowPontos = true;
 static bool OriginalShow = true;
 static int PontoSize = 5;
 
 void processInput(GLFWwindow* window){
-    //fecha a janela
+    // Fecha a janela
     if(glfwGetKey(window, GLFW_KEY_ESCAPE)){
         glfwSetWindowShouldClose(window, 1);
     }
-    //mostra o fecho convexo como pontos
+    // Mostra o fecho convexo como pontos
     if(glfwGetKey(window, GLFW_KEY_P)){
-        Pontos = true;
+        ShowPontos = true;
     }
-    //mostra o fecho convexo como linhas
+    // Mostra o fecho convexo como linhas
     if(glfwGetKey(window, GLFW_KEY_L)){
-        Pontos = false;
+        ShowPontos = false;
     }
-    //mostra a figura original
+    // Mostra a figura original
     if(glfwGetKey(window, GLFW_KEY_O)){
         OriginalShow = true;
     }
-    //esconde a figura original
+    // Esconde a figura original
     if(glfwGetKey(window, GLFW_KEY_H)){
         OriginalShow = false;
     }
-    //diminui o tamanho dos pontos
+    // Diminui o tamanho dos pontos
     if(glfwGetKey(window, GLFW_KEY_D)){
         if(PontoSize > MENORP){
             PontoSize--;
         }
-    //aumenta o tamanho dos pontos
+    // Aumenta o tamanho dos pontos
     }else if(glfwGetKey(window, GLFW_KEY_A)){
         if(PontoSize < MAIORP){
             PontoSize++;
@@ -48,116 +57,116 @@ void processInput(GLFWwindow* window){
     }
 }
 
-int main(){
+void handleUserInput(int& command, int& numberOfPoints, bool& isQuickHull) {
+    std::cout << "1) Testar com hexagono\n";
+    std::cout << "2) Testar com pontos aleatorios\n";
+    std::cout << "3) Testar com tema\n";
+    std::cout << "Digite um comando: ";
+    std::cin >> command;
 
+    if (command == 2) {
+        std::cout << "Numero de pontos: ";
+        std::cin >> numberOfPoints;
+    }
+    std::cout << "Algoritmo\n";
+    std::cout << "1) QuickHull\n";
+    std::cout << "2) Graham\n";
+    std::cout << "Digite um comando: ";
+    int algoritmo = 0;
+    std::cin >> algoritmo;
+    isQuickHull = (algoritmo == 1);
+}
 
-    if(!glfwInit())
-        return 1;
+std::vector<Vertex> generateRandomPoints(int numberOfPoints) {
+    std::vector<Vertex> points(numberOfPoints);
+    for (int i = 0; i < numberOfPoints; ++i) {
+        points[i].px = (float) (2.0 * ((double)rand() / RAND_MAX) - 1.0);
+        points[i].py = (float) (2.0 * ((double)rand() / RAND_MAX) - 1.0);
+    }
+    return points;
+}
 
-    //Window Hints
+std::vector<Vertex> createHexagonVertices() {
+    std::vector<Vertex> hexagonVertices(6);
+    float radius = 0.5f;
+    for (int i = 0; i < 6; ++i) {
+        float angle = M_PI / 3 * i;
+        hexagonVertices[i] = { (float) (radius * cos(angle)), (float) (radius * sin(angle))};
+    }
+    return hexagonVertices;
+}
+
+std::vector<Vertex> computeConvexHull(Vertex* points, int size, bool isQuickHull) {
+    if (isQuickHull) {
+        return QuickHull(points, size);
+    } else {
+        return Graham(points, size);
+    }
+}
+
+GLFWwindow* initWindow() {
+    if (!glfwInit()) return nullptr;
+
+    // Window Hints
     glfwWindowHint(GLFW_RESIZABLE, false);
     glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
     glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 1);
     glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_COMPAT_PROFILE);
 
-
-    /* Create a windowed mode window and its OpenGL context */
+    // Create a windowed mode window and its OpenGL context
     GLFWwindow* window = glfwCreateWindow(WIDTH, HEIGHT, "Fecho Convexo", NULL, NULL);
-    
-    if (!window)
-    {
+    if (!window) {
         glfwTerminate();
-        return 1;
+        return nullptr;
     }
 
-    /* Make the window's context current */
+    // Make the window's context current
     glfwMakeContextCurrent(window);
-    //glfwSetWindowPos(window, 1, 31);
    
-    if(!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress)){
+    if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress)) {
         std::cerr << "Failed to initialize GLAD\n";
-        return 1;
+        return nullptr;
     }
 
-    Model mod("../../OBJ/container.obj");
+    return window;
+}
 
-    /*Chamar funcoes aqui*/
+void renderPoints(Shader* shader, const std::vector<Vertex>& points) {
+    if (!ShowPontos) return;
+    glPointSize(PontoSize);
+    Mesh mesh(const_cast<Vertex*>(points.data()), points.size());
+    mesh.render(shader, GL_POINTS, 1);
+}
 
-    /*Vertex vertices[] = {
-        0.4	,   0.15	,
-        0.47,   0.0	    ,
-        0.4	,   -0.2	,
-        0.2	,   -0.18	,
-        0.21	,-0.33	,
-        0.22	,-0.42	,
-        0.23	,-0.53	,
-        0.16	,-0.65	,
-        0.07	,-0.73	,
-        -0.05	,-0.77	,
-        -0.18	,-0.78	,
-        -0.27	,-0.75	,
-        -0.36	,-0.67	,
-        -0.39	,-0.54	,
-        -0.34	,-0.41	,
-        -0.11	,-0.31	,
-        -0.19	,-0.21	,
-        -0.21	,-0.08	,
-        -0.2	 ,0.05	,
-        -0.17	 ,0.17	,
-        -0.09	 ,0.29	,
-        -0.12	 ,0.37	,
-        -0.25	 ,0.39	,
-        -0.4	 ,0.3	,
-        -0.47	 ,0.39	,
-        -0.3	 ,0.5	,
-        -0.27	 ,0.72	,
-        -0.2	 ,0.7	,
-        -0.15	 ,0.79	,
-        -0.03	 ,0.79	,
-        0.07	 ,0.77	,
-        0.15	 ,0.72	,
-        0.2	,   0.65	,
-        0.25	 ,0.56	,
-        0.26	 ,0.46	,
-        0.26	 ,0.26	,
-        0.25	 ,0.14
-    };*/
+void renderConvexHull(Shader* shader, Model& convexHull) {
+    glLineWidth(2);
+    glPointSize(PontoSize);
+    convexHull.render(shader, GL_LINE_LOOP, 0);
+    convexHull.render(shader, GL_POINTS, 0);
+}
 
-    auto fecho = Graham(vertices, 37);
-    //auto fecho = QuickHull(vertices, 37);
+void renderTheme(Shader* shader, Model& theme) {
+    if (!OriginalShow) return;
+    glLineWidth(8);
+    theme.render(shader, GL_LINE_LOOP, 1);
+}
 
-    //Mesh original = Mesh(vertices, 37);
+void renderScene(GLFWwindow* window, int command, const std::vector<Vertex>& points, Model& convexHull, Model& theme, Shader* shader) {
 
-    //Mesh m = Mesh(fecho.data(), fecho.size());
-
-    //mod.writeOBJ("../../OBJ/cavaloM.obj");
-    vector<Mesh*> meshFecho;
-    for(auto &i: mod.meshes){
-        auto fmesh = QuickHull(i->getVertex(), i->getSize());
-        meshFecho.push_back(new Mesh(fmesh.data(), fmesh.size()));
-    }
-    Model fechoConvexo = Model(meshFecho);
-
-    //fechoConvexo.printV();
-
-    Shader* s = new Shader("../../Shaders/baseShader.vert", "../../Shaders/baseShader.frag");
-
-
-
-    /*Fim chamar funcoes*/
-    glClearColor(0,0,0,0);
+    glClearColor(0.1, 0.1, 0.1, 1);
     glViewport(0, 0, WIDTH, HEIGHT);
-    //Loop da Janela
+
+    // Loop da Janela
     int frames = 0;
     double lastTime = glfwGetTime();
     const int FPS = 60;
     const double frameDuration = 1.0 / FPS;
     double last_frame = glfwGetTime();
-    while (!glfwWindowShouldClose(window))
-    {
+
+    while (!glfwWindowShouldClose(window)) {
         double now = glfwGetTime();
         double deltaTime = now - last_frame;
-        if(deltaTime >= frameDuration){
+        if (deltaTime >= frameDuration) {
             last_frame = now;
 
             frames++;
@@ -165,33 +174,73 @@ int main(){
                 frames = 0;
                 lastTime += 1.0;
             }
+
             processInput(window);
             glfwPollEvents();
             glClear(GL_COLOR_BUFFER_BIT);
-            //Renderizar pontos abaixo
-            //glLineWidth(5);
-            //glPointSize(15);
-            mod.render(s, GL_LINE_LOOP, 1);
-            /*glPointSize(15);
-            mod.render(s, GL_POINTS, 1);
-            glPointSize(5);*/
-            //glPointSize(5);
-            //fechoConvexo.render(s, GL_POINTS, 0);
-            //mod.render(s, GL_LINE_LOOP, 1);
-            /*if(OriginalShow){
-                original.render(s, GL_POINT);
+
+            if (command == 3) {
+                renderTheme(shader, theme);
             }
-            if(Pontos == true){
-                m.render(s, 0, PontoSize);
-            }else{
-                m.render(s, 0);
-            }*/
-            //swap
+            renderPoints(shader, points);
+            renderConvexHull(shader, convexHull);
+    
             glfwSwapBuffers(window);
         }
     }
-    delete s;
-    glfwTerminate();
 
+    delete shader;
+}
+
+
+
+int main() {
+    int command = 0;
+    int numberOfPoints = 0;
+    bool isQuickHull = false;
+
+    handleUserInput(command, numberOfPoints, isQuickHull);
+
+    GLFWwindow* window = initWindow();
+    if (!window) return 1;
+
+    std::vector<Vertex> points;
+    if (command == 1) {
+        points = createHexagonVertices();
+    }
+    else if (command == 2) {
+        points = generateRandomPoints(numberOfPoints);
+    }
+    else {
+        ShowPontos = false;
+    }
+    
+    vector<Mesh*> meshVector;
+    Model* theme;
+     
+    if (command == 3) {
+        theme = new Model("../../OBJ/container.obj");
+        for (auto& mesh : theme->meshes) {
+            auto fmesh = computeConvexHull(mesh->getVertex(), mesh->getSize(), isQuickHull);
+            meshVector.push_back(new Mesh(fmesh.data(), fmesh.size()));
+            for (const auto& vertex : fmesh) {
+                points.push_back(vertex);
+            }
+        }
+    } else {
+        auto fmesh = computeConvexHull(points.data(), points.size(), isQuickHull);
+        meshVector.push_back(new Mesh(fmesh.data(), fmesh.size()));
+    }
+    Model convexHull = Model(meshVector);
+    // Initialize shader
+    Shader* shader = new Shader("../../Shaders/baseShader.vert", "../../Shaders/baseShader.frag");
+
+    // Main render loop
+    while (!glfwWindowShouldClose(window)) {
+        renderScene(window, command, points, convexHull, *theme, shader);
+    }
+
+    delete shader;
+    glfwTerminate();
     return 0;
 }
