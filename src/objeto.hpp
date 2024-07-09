@@ -184,6 +184,64 @@ public:
         f.close();
     }
 
+    void addValNew(Vertex* arrayV, int &n, Vertex val){
+        for(int i = 0; i < n; i++){
+            if(arrayV[i].px == val.px && arrayV[i].py == val.py){
+                return;
+            }
+        }
+        arrayV[n] = val;
+        n++;
+    }
+
+    int GetValArr(Vertex* arrayV, int n, Vertex val){
+        for(int i = 0; i < n; i++){
+            if(arrayV[i].px == val.px && arrayV[i].py == val.py){
+                return i;
+            }
+        }
+        return -1;
+    }
+
+    void writeTriangOBJ(string path){
+        std::fstream f;
+        f.open(path, std::ios::out);
+        f << "# Fecho Convexo MC " << std::endl;
+        f << "# " << std::endl;
+        f << "# Fecho A seguir" << std::endl;
+        f << "# " << std::endl;
+        f << "o cavalo marinho " << std::endl;
+        //lista de vertices unicos
+        int k = 0;
+        for(auto &i: this->meshes){
+            k += i->getSize();
+        }
+        Vertex* verticesOBJ = new Vertex[k];
+        int n = 0;
+        for(auto &i: this->meshes){
+            for(int j = 0; j < i->getSize(); j++){
+                addValNew(verticesOBJ, n, i->getVertex()[j]);
+            }
+        }
+        cout <<"qnt vertices: " << k << "\n";
+        cout <<"qnt vertices unicos: " << n << "\n";
+        for(int k = 0; k < n; k++){
+            //escreve os vertices para o arquivo
+            f << "v " << verticesOBJ[k].px << " " << verticesOBJ[k].py << " " << 0.0 << std::endl;
+        }
+        //escreve as faces
+        for(auto &i: this->meshes){
+            f << "f ";
+            for(int j = 0; j < i->getSize(); j++){
+                Vertex vert = i->getVertex()[j];
+                int indice = GetValArr(verticesOBJ, n, vert);
+                f << indice+1 << " ";
+            }
+            f << std::endl;
+        }
+        f << "\0";
+        f.close();
+    }
 
 };
 

@@ -1,6 +1,9 @@
 #include "fecho.hpp"
 #include "objeto.hpp"
+#include "triang.hpp"
 #include <stdlib.h>
+#include <iostream>
+#include<new>
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
 
@@ -104,7 +107,54 @@ std::vector<Vertex> computeConvexHull(Vertex* points, int size, bool isQuickHull
     }
 }
 
-GLFWwindow* initWindow() {
+Model* Triangulate(Model* modelo)
+{
+    int size = 0;
+    vector<Mesh*> meshs;
+    for(auto m: modelo->meshes){
+        //pegar os vertices de cada mesh
+        int n = m->getSize();
+        size = m->getSize() + 3;
+        Vertex* vertices = m->getVertex();
+        Vertex* v_temp = new(nothrow)Vertex[size];
+        for(int i = 0; i < n; i++){
+            v_temp[i] = vertices[i];
+        }
+        //criar vetor v de triangulos
+        Triang* v = new(nothrow)Triang[3*n];
+        int ntri = 0;
+        //ordena os pontos
+        qsort(v_temp, n, sizeof(Vertex), VertexCompare);
+        delunayTriang(v_temp, n, v, ntri);
+        //para ntri:
+        for(int i = 0; i < ntri; i++){
+            Vertex p1 = v_temp[v[i].p1];
+            Vertex p2 = v_temp[v[i].p2];
+            Vertex p3 = v_temp[v[i].p3];
+            //  crio array de vertice
+            Vertex* triangulo = new Vertex[3];
+            //  adiciono os pontos p1 p2 p3 para o array
+            triangulo[0] = p1;
+            triangulo[1] = p2;
+            triangulo[2] = p3;
+            //adiciono o *mesh(array de vertice, 3) para o vetor de arrays
+            meshs.push_back(new Mesh(triangulo, 3));
+            delete[] triangulo;
+        }
+        cout << "numero de triangulos: " << ntri << "\n";
+        delete[] v;
+        delete[] v_temp;
+    }
+    //delunayTriang(nullptr, 3);
+    
+    //crio o novo modelo triangularizado
+    //retorno o modelo triangularizado
+    Model *modeloTriangulado = new Model(meshs);
+    return modeloTriangulado;
+}
+
+GLFWwindow* initWindow() 
+{
     if (!glfwInit()) return nullptr;
 
     // Window Hints
@@ -131,27 +181,32 @@ GLFWwindow* initWindow() {
     return window;
 }
 
-void renderPoints(Shader* shader, const std::vector<Vertex>& points) {
+void renderPoints(Shader* shader, const std::vector<Vertex>& points) 
+{
     if (!ShowPontos) return;
     glPointSize(PontoSize);
     Mesh mesh(const_cast<Vertex*>(points.data()), points.size());
     mesh.render(shader, GL_POINTS, 1);
 }
 
-void renderConvexHull(Shader* shader, Model& convexHull) {
+void renderConvexHull(Shader* shader, Model& convexHull) 
+{
     glLineWidth(2);
     glPointSize(PontoSize);
     convexHull.render(shader, GL_LINE_LOOP, 0);
     convexHull.render(shader, GL_POINTS, 0);
 }
 
-void renderTheme(Shader* shader, Model& theme) {
+void renderTheme(Shader* shader, Model& theme) 
+{
     if (!OriginalShow) return;
     glLineWidth(8);
     theme.render(shader, GL_LINE_LOOP, 1);
 }
 
-void renderScene(GLFWwindow* window, int command, const std::vector<Vertex>& points, Model& convexHull, Model& theme, Shader* shader) {
+
+void renderScene(GLFWwindow* window, int command, const std::vector<Vertex>& points, Model& convexHull, Model& theme, Shader* shader) 
+{
 
     glClearColor(0.1, 0.1, 0.1, 1);
     glViewport(0, 0, WIDTH, HEIGHT);
@@ -192,9 +247,12 @@ void renderScene(GLFWwindow* window, int command, const std::vector<Vertex>& poi
     delete shader;
 }
 
-
+void render(Shader* shader, Model* modelo){
+    modelo->render(shader, GL_LINE_LOOP, 1);
+}
 
 int main() {
+    /**
     int command = 0;
     int numberOfPoints = 0;
     bool isQuickHull = false;
@@ -242,5 +300,50 @@ int main() {
 
     delete shader;
     glfwTerminate();
+    */
+    GLFWwindow* window = initWindow();
+    if (!window) return 1;
+
+    Model *mod = new Model("../../OBJ/container.obj");
+    auto triangulado = Triangulate(mod);
+
+    // Initialize shader
+    Shader* shader = new Shader("../../Shaders/baseShader.vert", "../../Shaders/baseShader.frag");
+
+    glClearColor(0.1, 0.1, 0.1, 1);
+    glViewport(0, 0, WIDTH, HEIGHT);
+
+    // Loop da Janela
+    int frames = 0;
+    double lastTime = glfwGetTime();
+    const int FPS = 60;
+    const double frameDuration = 1.0 / FPS;
+    double last_frame = glfwGetTime();
+
+    while (!glfwWindowShouldClose(window)) {
+        double now = glfwGetTime();
+        double deltaTime = now - last_frame;
+        if (deltaTime >= frameDuration) {
+            last_frame = now;
+
+            frames++;
+            if (now - lastTime >= 1.0) {
+                frames = 0;
+                lastTime += 1.0;
+            }
+
+            processInput(window);
+            glfwPollEvents();
+            glClear(GL_COLOR_BUFFER_BIT);
+            //renderizar aqui
+            render(shader, triangulado);
+    
+            glfwSwapBuffers(window);
+        }
+    }
+    triangulado->writeTriangOBJ("../../OBJ/cavaloTriang.obj");
+    delete shader;
+    glfwTerminate();
+    system("pause");
     return 0;
 }
