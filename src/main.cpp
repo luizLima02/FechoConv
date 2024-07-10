@@ -6,6 +6,7 @@
 #include<new>
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
+#include <time.h>
 
 #define WIDTH 800
 #define HEIGHT 800
@@ -13,13 +14,14 @@
 #define MAIORP 15
 
 void handleUserInput(int& command, int& numberOfPoints);
-void renderScene(GLFWwindow* window, int command, const std::vector<Vertex>& points, Model& convexHull, Model& theme, Shader* shader);
+void renderScene(GLFWwindow* window, int command, const std::vector<Vertex>& points, Model& theme, Model& triangulado, Shader* shader);
 void processInput(GLFWwindow* window);
 void renderPoints(Shader* shader, const std::vector<Vertex>& points);
 void renderConvexHull(Shader* shader, Model& convexHull);
 void renderTheme(Shader* shader, Model& theme);
+
 std::vector<Vertex> generateRandomPoints(int numberOfPoints);
-std::vector<Vertex> createHexagonVertices();
+std::vector<Vertex> createInputVertices(int numberOfPoints);
 std::vector<Vertex> computeConvexHull(Vertex* points, int size, bool isQuickHull);
 
 static bool ShowPontos = true;
@@ -61,23 +63,25 @@ void processInput(GLFWwindow* window){
 }
 
 void handleUserInput(int& command, int& numberOfPoints, bool& isQuickHull) {
-    std::cout << "1) Testar com hexagono\n";
+    std::cout << "1) Testar com pontos escolhidos\n";
     std::cout << "2) Testar com pontos aleatorios\n";
     std::cout << "3) Testar com tema\n";
     std::cout << "Digite um comando: ";
     std::cin >> command;
 
-    if (command == 2) {
+    if (command == 1 || command == 2) {
         std::cout << "Numero de pontos: ";
         std::cin >> numberOfPoints;
     }
+    /*
     std::cout << "Algoritmo\n";
     std::cout << "1) QuickHull\n";
     std::cout << "2) Graham\n";
     std::cout << "Digite um comando: ";
     int algoritmo = 0;
     std::cin >> algoritmo;
-    isQuickHull = (algoritmo == 1);
+    isQuickHull = (algoritmo == 1);*/
+    isQuickHull = false;
 }
 
 std::vector<Vertex> generateRandomPoints(int numberOfPoints) {
@@ -89,14 +93,16 @@ std::vector<Vertex> generateRandomPoints(int numberOfPoints) {
     return points;
 }
 
-std::vector<Vertex> createHexagonVertices() {
-    std::vector<Vertex> hexagonVertices(6);
-    float radius = 0.5f;
-    for (int i = 0; i < 6; ++i) {
-        float angle = M_PI / 3 * i;
-        hexagonVertices[i] = { (float) (radius * cos(angle)), (float) (radius * sin(angle))};
+std::vector<Vertex> createInputVertices(int numberOfPoints) {
+    std::vector<Vertex> result(numberOfPoints);
+    float px, py;
+    for (int i = 0; i < numberOfPoints; ++i) {
+        std::cout << "Vertice " << i << " : ";
+        std::cin >> px >> py;
+        result[i].px = px;
+        result[i].py = py;
     }
-    return hexagonVertices;
+    return result;
 }
 
 std::vector<Vertex> computeConvexHull(Vertex* points, int size, bool isQuickHull) {
@@ -205,19 +211,13 @@ void renderTheme(Shader* shader, Model& theme)
 }
 
 
-void renderScene(GLFWwindow* window, int command, const std::vector<Vertex>& points, Model& convexHull, Model& theme, Shader* shader) 
+void renderScene(GLFWwindow* window, int command, const std::vector<Vertex>& points, Model& theme, Model& triangulado, Shader* shader) 
 {
-
-    glClearColor(0.1, 0.1, 0.1, 1);
-    glViewport(0, 0, WIDTH, HEIGHT);
-
-    // Loop da Janela
     int frames = 0;
     double lastTime = glfwGetTime();
     const int FPS = 60;
     const double frameDuration = 1.0 / FPS;
     double last_frame = glfwGetTime();
-
     while (!glfwWindowShouldClose(window)) {
         double now = glfwGetTime();
         double deltaTime = now - last_frame;
@@ -233,18 +233,15 @@ void renderScene(GLFWwindow* window, int command, const std::vector<Vertex>& poi
             processInput(window);
             glfwPollEvents();
             glClear(GL_COLOR_BUFFER_BIT);
-
-            if (command == 3) {
+            /*if (command == 3) {
                 renderTheme(shader, theme);
-            }
+            }*/
             renderPoints(shader, points);
-            renderConvexHull(shader, convexHull);
-    
+
+            renderConvexHull(shader, triangulado);
             glfwSwapBuffers(window);
         }
     }
-
-    delete shader;
 }
 
 void render(Shader* shader, Model* modelo){
@@ -252,19 +249,16 @@ void render(Shader* shader, Model* modelo){
 }
 
 int main() {
-    /**
+    
     int command = 0;
     int numberOfPoints = 0;
     bool isQuickHull = false;
-
+    srand (time(NULL));
     handleUserInput(command, numberOfPoints, isQuickHull);
-
-    GLFWwindow* window = initWindow();
-    if (!window) return 1;
 
     std::vector<Vertex> points;
     if (command == 1) {
-        points = createHexagonVertices();
+        points = createInputVertices(numberOfPoints);
     }
     else if (command == 2) {
         points = generateRandomPoints(numberOfPoints);
@@ -272,78 +266,40 @@ int main() {
     else {
         ShowPontos = false;
     }
-    
+
+    GLFWwindow* window = initWindow();
+    if (!window) return 1;
+
+
     vector<Mesh*> meshVector;
     Model* theme;
      
     if (command == 3) {
-        theme = new Model("../../OBJ/container.obj");
+        theme = new Model("../../OBJ/input.obj");
         for (auto& mesh : theme->meshes) {
-            auto fmesh = computeConvexHull(mesh->getVertex(), mesh->getSize(), isQuickHull);
-            meshVector.push_back(new Mesh(fmesh.data(), fmesh.size()));
-            for (const auto& vertex : fmesh) {
+            int n = mesh->getSize();
+            vector<Vertex> vertexVector( mesh->getVertex(), mesh->getVertex() + n);
+            meshVector.push_back(new Mesh(vertexVector.data(), vertexVector.size()));
+            for (const auto& vertex : vertexVector) {
                 points.push_back(vertex);
             }
         }
     } else {
-        auto fmesh = computeConvexHull(points.data(), points.size(), isQuickHull);
-        meshVector.push_back(new Mesh(fmesh.data(), fmesh.size()));
+        meshVector.push_back(new Mesh(points.data(), points.size()));
     }
-    Model convexHull = Model(meshVector);
+    Model *convexHull = new Model(meshVector);
+    auto triangulado = Triangulate(convexHull);
     // Initialize shader
     Shader* shader = new Shader("../../Shaders/baseShader.vert", "../../Shaders/baseShader.frag");
-
-    // Main render loop
-    while (!glfwWindowShouldClose(window)) {
-        renderScene(window, command, points, convexHull, *theme, shader);
-    }
-
-    delete shader;
-    glfwTerminate();
-    */
-    GLFWwindow* window = initWindow();
-    if (!window) return 1;
-
-    Model *mod = new Model("../../OBJ/container.obj");
-    auto triangulado = Triangulate(mod);
-
-    // Initialize shader
-    Shader* shader = new Shader("../../Shaders/baseShader.vert", "../../Shaders/baseShader.frag");
-
-    glClearColor(0.1, 0.1, 0.1, 1);
-    glViewport(0, 0, WIDTH, HEIGHT);
-
-    // Loop da Janela
-    int frames = 0;
-    double lastTime = glfwGetTime();
-    const int FPS = 60;
-    const double frameDuration = 1.0 / FPS;
-    double last_frame = glfwGetTime();
-
-    while (!glfwWindowShouldClose(window)) {
-        double now = glfwGetTime();
-        double deltaTime = now - last_frame;
-        if (deltaTime >= frameDuration) {
-            last_frame = now;
-
-            frames++;
-            if (now - lastTime >= 1.0) {
-                frames = 0;
-                lastTime += 1.0;
-            }
-
-            processInput(window);
-            glfwPollEvents();
-            glClear(GL_COLOR_BUFFER_BIT);
-            //renderizar aqui
-            render(shader, triangulado);
+    // Saída
+    triangulado->writeTriangOBJ("../../OBJ/output.obj");
     
-            glfwSwapBuffers(window);
-        }
-    }
-    triangulado->writeTriangOBJ("../../OBJ/cavaloTriang.obj");
+    // Main render loop
+    renderScene(window, command, points, *theme, *triangulado, shader);
+
     delete shader;
     glfwTerminate();
-    system("pause");
+    
     return 0;
+    
 }

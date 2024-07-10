@@ -174,7 +174,7 @@ public:
         f << "# " << std::endl;
         f << "# Fecho A seguir" << std::endl;
         f << "# " << std::endl;
-        f << "o cavalo marinho " << std::endl;
+        f << "o output " << std::endl;
         int k = 1;
         for(auto &i: this->meshes){
             f << "  g " << k << std::endl;
@@ -210,7 +210,7 @@ public:
         f << "# " << std::endl;
         f << "# Fecho A seguir" << std::endl;
         f << "# " << std::endl;
-        f << "o cavalo marinho " << std::endl;
+        f << "o output " << std::endl;
         //lista de vertices unicos
         int k = 0;
         for(auto &i: this->meshes){
